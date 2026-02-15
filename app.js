@@ -23,6 +23,7 @@ let detector;
 let stream;
 let cameraStarted = false;
 let running = true;
+let busy = false;
 let confidenceThreshold = Number(confidenceInput.value);
 let lastFrameTime = performance.now();
 
@@ -30,11 +31,19 @@ function setStatus(text) {
   statusEl.textContent = text;
 }
 
+function setBusy(isBusy) {
+  busy = isBusy;
+  startCameraButton.disabled = isBusy;
+  reloadModelButton.disabled = isBusy;
+  toggleButton.disabled = isBusy;
+}
+
 function resizeCanvasToVideo() {
   const { videoWidth, videoHeight } = video;
   if (!videoWidth || !videoHeight) {
     return;
   }
+
   canvas.width = videoWidth;
   canvas.height = videoHeight;
 }
@@ -131,6 +140,10 @@ async function setupCamera() {
 }
 
 async function loadPoseNet() {
+  if (!window.posenet) {
+    throw new Error('PoseNet library failed to load. Check network/CDN access and refresh.');
+  }
+
   setStatus('Loading PoseNet model…');
   detector = await posenet.load({
     architecture: 'MobileNetV1',
@@ -145,12 +158,12 @@ function stopCamera() {
     stream.getTracks().forEach((track) => track.stop());
     stream = undefined;
   }
+
   video.srcObject = null;
   cameraStarted = false;
   running = true;
   toggleButton.textContent = 'Pause Detection';
   startCameraButton.textContent = 'Enable Camera';
-  startCameraButton.disabled = false;
   clearOverlay();
   setStatus('Camera disabled. Click "Enable Camera" to start again.');
 }
@@ -183,12 +196,14 @@ async function renderLoop() {
 }
 
 startCameraButton.addEventListener('click', async () => {
+  if (busy) return;
+
   if (cameraStarted) {
     stopCamera();
     return;
   }
 
-  startCameraButton.disabled = true;
+  setBusy(true);
   setStatus('Requesting camera permission…');
 
   try {
@@ -196,29 +211,37 @@ startCameraButton.addEventListener('click', async () => {
     await loadPoseNet();
     cameraStarted = true;
     startCameraButton.textContent = 'Disable Camera';
-    startCameraButton.disabled = false;
     setStatus('Detecting poses…');
   } catch (error) {
-    startCameraButton.disabled = false;
     setStatus(formatCameraError(error));
+  } finally {
+    setBusy(false);
   }
 });
 
 reloadModelButton.addEventListener('click', async () => {
+  if (busy) return;
+
   if (!cameraStarted) {
     setStatus('Enable camera first, then reload the model.');
     return;
   }
+
+  setBusy(true);
 
   try {
     await loadPoseNet();
     setStatus('Model reloaded. Detecting poses…');
   } catch (error) {
     setStatus(`Error reloading model: ${error.message}`);
+  } finally {
+    setBusy(false);
   }
 });
 
 toggleButton.addEventListener('click', () => {
+  if (busy) return;
+
   if (!cameraStarted) {
     setStatus('Enable camera first to start detection.');
     return;
@@ -231,10 +254,17 @@ toggleButton.addEventListener('click', () => {
   if (!running) clearOverlay();
 });
 
+architectureSelect.addEventListener('change', () => {
+  if (cameraStarted) {
+    setStatus('Architecture changed. Click "Reload Model" to apply it.');
+  }
+});
+
 confidenceInput.addEventListener('input', (event) => {
   confidenceThreshold = Number(event.target.value);
   confidenceValue.textContent = confidenceThreshold.toFixed(2);
 });
 
 window.addEventListener('resize', resizeCanvasToVideo, { passive: true });
+window.addEventListener('pagehide', stopCamera);
 renderLoop();

@@ -19,3 +19,4 @@ Then open `http://localhost:4173` and use:
 - **Enable Camera** / **Disable Camera** to start or stop webcam access
 - **Pause Detection** / **Resume Detection** to control pose inference
 - **Reload Model** to reload PoseNet with the selected architecture
+- If you change architecture, click **Reload Model** to apply it
