@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PoseNet Front End Demo</title>
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.21.0/dist/tf.min.js" defer></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/posenet@2.2.2/dist/posenet.min.js" defer></script>
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="panel" aria-label="PoseNet controls">
+        <h1>PoseNet Front End</h1>
+        <p>
+          Detect body keypoints in real time using your webcam and TensorFlow.js PoseNet.
+        </p>
+
+        <div class="controls">
+          <button id="startCameraButton" class="start-button" type="button">Enable Camera</button>
+
+          <label for="confidence">
+            Confidence threshold
+            <input id="confidence" type="range" min="0.1" max="0.95" step="0.05" value="0.5" />
+          </label>
+          <output id="confidenceValue" for="confidence">0.50</output>
+
+          <label for="maxPoses">
+            Max poses
+            <select id="maxPoses">
+              <option value="1" selected>1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+            </select>
+          </label>
+
+          <label for="architecture">
+            Model architecture
+            <select id="architecture">
+              <option value="0.5">MobileNetV1 0.50 (faster)</option>
+              <option value="0.75" selected>MobileNetV1 0.75</option>
+              <option value="1.0">MobileNetV1 1.0 (more accurate)</option>
+            </select>
+          </label>
+
+          <div class="button-row">
+            <button id="reloadModelButton" type="button">Reload Model</button>
+            <button id="toggleButton" type="button">Pause Detection</button>
+          </div>
+        </div>
+
+        <dl class="metrics" aria-label="runtime metrics">
+          <div>
+            <dt>FPS</dt>
+            <dd id="fps">0</dd>
+          </div>
+          <div>
+            <dt>Visible keypoints</dt>
+            <dd id="keypointCount">0</dd>
+          </div>
+        </dl>
+
+        <p id="status" class="status" role="status" aria-live="polite">
+          Click "Enable Camera" to grant webcam access.
+        </p>
+      </section>
+
+      <section class="stage-wrap" aria-label="PoseNet camera stage">
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="overlay"></canvas>
+      </section>
+    </main>
+  </body>
+</html>
